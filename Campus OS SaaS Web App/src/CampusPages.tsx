@@ -87,7 +87,7 @@ const chatAnswers: Record<string, {
   page: Page
 }> = {
   scholarship: {
-    text: "Based on your SE Computer Engineering profile, you're likely eligible for the Maharashtra Post-Matric Scholarship and the SIT Merit Grant. The Post-Matric application window closes in 18 days. Check each scheme's income and document requirements before applying.",
+    text: "Based on your SE Computer Engineering profile, you're likely eligible for the Maharashtra Post-Matric Scholarship and the DMCE Merit Grant. The Post-Matric application window closes in 18 days. Check each scheme's income and document requirements before applying.",
     source: "Student Welfare Office · 2026–27 schemes",
     meta: "Updated 2 days ago",
     action: "Check eligibility",
@@ -272,7 +272,7 @@ export function CampusAIPage({
                 </Heading>
                 <p>
                   Ask about schemes, services, events, or how things work around
-                  Sahyadri. I'll show you where my answers come from.
+                  DMCE. I'll show you where my answers come from.
                 </p>
                 <div className="prompt-grid">
                   {suggestions.map((s, i) => (
@@ -399,8 +399,8 @@ const schemes = [
   },
   {
     id: "merit",
-    name: "SIT Merit Excellence Grant",
-    org: "Sahyadri Institute of Technology",
+    name: "DMCE Merit Excellence Grant",
+    org: "Datta Meghe College of Engineering",
     category: "Institute",
     tags: ["Merit-based", "All departments"],
     days: 32,
@@ -424,7 +424,7 @@ const schemes = [
   {
     id: "research",
     name: "Undergraduate Research Fellowship",
-    org: "SIT Research Cell",
+    org: "DMCE Research Cell",
     category: "Research",
     tags: ["SE–BE students", "Faculty nomination"],
     days: 46,
@@ -436,7 +436,7 @@ const schemes = [
   {
     id: "women",
     name: "Women in Engineering Award",
-    org: "SIT Student Welfare Office",
+    org: "DMCE Student Welfare Office",
     category: "Institute",
     tags: ["Women students", "Engineering"],
     days: 39,
@@ -557,7 +557,7 @@ export function ScholarshipsPage({
           <span className="eyebrow">MATCHED TO YOUR PROFILE</span>
           <Heading level={2}>Support for your next step.</Heading>
           <p>
-            SE Computer Engineering · Sahyadri Institute of Technology · Pune
+            SE Computer Engineering · Datta Meghe College of Engineering · Navi Mumbai
           </p>
         </div>
         <span className="opportunity-count mono">
@@ -934,7 +934,7 @@ const clubs = [
       "A home for curious readers, writers, and people who love a good conversation.",
   },
   {
-    name: "Sahyadri Outreach",
+    name: "DMCE Outreach",
     area: "Community & impact",
     members: 72,
     icon: HeartPulse,
@@ -1432,7 +1432,7 @@ const services: {
     tone: "warning",
     location: "Central Library",
     hours: "8:00 AM – 9:00 PM",
-    contact: "library@sahyadri.edu.in",
+    contact: "library@dmce.ac.in",
     detail: "Books, reading halls and digital resources",
   },
   {
@@ -1442,7 +1442,7 @@ const services: {
     tone: "success",
     location: "C Block · Floors 1–3",
     hours: "8:30 AM – 7:00 PM",
-    contact: "labs@sahyadri.edu.in",
+    contact: "labs@dmce.ac.in",
     detail: "Open access and department labs",
   },
   {
@@ -1452,7 +1452,7 @@ const services: {
     tone: "success",
     location: "All campus buildings",
     hours: "Available 24/7",
-    contact: "network@sahyadri.edu.in",
+    contact: "network@dmce.ac.in",
     detail: "Network access and connectivity help",
   },
   {
@@ -1462,7 +1462,7 @@ const services: {
     tone: "success",
     location: "Main gate · Bus bay",
     hours: "6:30 AM – 7:30 PM",
-    contact: "transport@sahyadri.edu.in",
+    contact: "transport@dmce.ac.in",
     detail: "Campus buses and route information",
   },
   {
@@ -1472,7 +1472,7 @@ const services: {
     tone: "success",
     location: "Central Courtyard",
     hours: "8:00 AM – 8:00 PM",
-    contact: "canteen@sahyadri.edu.in",
+    contact: "canteen@dmce.ac.in",
     detail: "Meals, snacks and refreshments",
   },
   {
@@ -1482,7 +1482,7 @@ const services: {
     tone: "warning",
     location: "Hostel Block",
     hours: "Desk staffed 24/7",
-    contact: "hostel@sahyadri.edu.in",
+    contact: "hostel@dmce.ac.in",
     detail: "Accommodation and resident support",
   },
   {
@@ -1492,7 +1492,7 @@ const services: {
     tone: "success",
     location: "A Block · Ground floor",
     hours: "9:00 AM – 6:00 PM",
-    contact: "medical@sahyadri.edu.in",
+    contact: "medical@dmce.ac.in",
     detail: "First aid and medical assistance",
   },
   {
@@ -1502,7 +1502,7 @@ const services: {
     tone: "success",
     location: "B Block · Ground floor",
     hours: "9:00 AM – 6:00 PM",
-    contact: "print@sahyadri.edu.in",
+    contact: "print@dmce.ac.in",
     detail: "Printing, scanning and photocopying",
   },
   {
@@ -1512,7 +1512,7 @@ const services: {
     tone: "success",
     location: "A Block · Ground floor",
     hours: "9:30 AM – 5:00 PM",
-    contact: "studentoffice@sahyadri.edu.in",
+    contact: "studentoffice@dmce.ac.in",
     detail: "Certificates, records and student help",
   },
 ]
@@ -1891,7 +1891,7 @@ export function ProfilePage({
               <span className="eyebrow">STUDENT PROFILE</span>
               <Heading level={2}>Abhinay Shinde</Heading>
               <p>SE Computer Engineering · Division B</p>
-              <span className="mono">SIT2024CS117</span>
+              <span className="mono">DMCE2024CS117</span>
             </div>
             <Badge tone="success" icon={CircleCheck}>
               Active student
@@ -1901,11 +1901,11 @@ export function ProfilePage({
             <SectionTitle title="Your details" />
             <div className="details-grid">
               {[
-                ["College", "Sahyadri Institute of Technology"],
+                ["College", "Datta Meghe College of Engineering"],
                 ["Department", "Computer Engineering"],
                 ["Year / Division", "SE · Division B"],
-                ["Student ID", "SIT2024CS117"],
-                ["College email", "abhinay@sahyadri.edu.in"],
+                ["Student ID", "DMCE2024CS117"],
+                ["College email", "abhinay@dmce.ac.in"],
                 ["Academic year", "2026–27"],
               ].map(([k, v]) => (
                 <div key={k}>
