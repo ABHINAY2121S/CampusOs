@@ -123,18 +123,31 @@ const chatAnswers: Record<string, {
   },
 }
 function getAnswer(question: string) {
-  const q = question.toLowerCase()
+  const q = question.toLowerCase();
+  const isIssue = [
+    "broken", "leak", "repair", "not working", "malfunction", "projector", "issue", "report",
+    "wifi", "internet", "fan", "light", "ac", "smell", "dirty", "water", "electricity", "switch"
+  ].some(k => q.includes(k));
+
+  if (isIssue) {
+    return {
+      text: `I've analyzed your request: "${question.trim()}". This matches campus facility operations. We can extract the location, category, urgency, and check for duplicates right away.`,
+      source: "Campus AI Issue Engine · Automated intake",
+      meta: "Analysis ready",
+      action: "Report this issue",
+      page: "report" as const,
+    };
+  }
+
   return chatAnswers[
     q.includes("scholarship") || q.includes("scheme") || q.includes("eligib")
       ? "scholarship"
       : q.includes("library")
         ? "library"
-        : q.includes("projector") || q.includes("report") || q.includes("issue")
-          ? "projector"
-          : q.includes("event") || q.includes("week")
-            ? "events"
-            : "certificate"
-  ]
+        : q.includes("event") || q.includes("week")
+          ? "events"
+          : "certificate"
+  ];
 }
 type ChatMessage = {
   question: string
@@ -143,7 +156,8 @@ type ChatMessage = {
 export function CampusAIPage({
   navigate,
   toast,
-}: BaseProps & { navigate: Nav }) {
+  onPrefillComplaint,
+}: BaseProps & { navigate: Nav; onPrefillComplaint?: (text: string) => void }) {
   const [draft, setDraft] = useState("")
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [history, setHistory] = useState<{
@@ -310,7 +324,13 @@ export function CampusAIPage({
                         <div className="chat-answer-actions">
                           <Button
                             variant="secondary"
-                            onClick={() => navigate(m.answer.page)}
+                            onClick={() => {
+                              if (m.answer.page === "report" && onPrefillComplaint) {
+                                onPrefillComplaint(m.question);
+                              } else {
+                                navigate(m.answer.page);
+                              }
+                            }}
                           >
                             {m.answer.action} <Icon as={ArrowRight} size={15} />
                           </Button>

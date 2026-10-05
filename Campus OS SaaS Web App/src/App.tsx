@@ -435,17 +435,36 @@ export default function App() {
     if (!commentInput.trim()) return;
     const body = commentInput.trim();
     setCommentInput("");
+
+    const optimisticComment = {
+      id: "temp-" + Date.now(),
+      body,
+      createdAt: new Date().toISOString(),
+      author: {
+        id: user?.id || "me",
+        name: user?.name || (role === "student" ? "Abhinay Shinde" : "Campus Admin"),
+        role: user?.role || role || "student",
+      },
+    };
+    setSelectedIssue((prev: any) => prev ? {
+      ...prev,
+      comments: [...(prev.comments || []), optimisticComment],
+    } : prev);
+
     const targetId = selectedIssue?.id;
     if (targetId) {
       try {
         const newComm = await addComment(targetId, body);
         setSelectedIssue((prev: any) => prev ? {
           ...prev,
-          comments: [...(prev.comments || []), newComm],
+          comments: (prev.comments || []).map((c: any) => c.id === optimisticComment.id ? newComm : c),
         } : prev);
         setToast("Comment posted.");
         return;
-      } catch {}
+      } catch (err: any) {
+        setToast(err.response?.data?.error || "Could not sync comment with server.");
+        return;
+      }
     }
     setToast("Comment posted.");
   };
@@ -590,7 +609,7 @@ export default function App() {
         })}</Card><Card className="manage-detail"><div className="manage-detail-head"><div><span className="mono muted">{selectedIssue?.displayId || "CO-2041"} · CLUSTERED ISSUE</span><h2>{selectedIssue?.title || "Projector malfunction in B204"}</h2><p>{mAff} reports grouped into one actionable issue</p></div><Badge tone={mTone} icon={CircleAlert}>{mLabel}</Badge></div><div className="manage-fields"><label>ASSIGN DEPARTMENT<select value={department} onChange={e => setDepartment(e.target.value)}><option>Electrical</option><option>IT Maintenance</option><option>Civil & Furniture</option><option>Housekeeping</option><option>Security</option><option>Network/Wi-Fi</option></select></label><label>ASSIGN TECHNICIAN<select value={technician} onChange={e => setTechnician(e.target.value)}><option value="">Select technician</option>{(technicianList.length > 0 ? technicianList : [{ id: "1", name: "Rohit More" }, { id: "2", name: "Priya Patil" }, { id: "3", name: "Sameer Deshmukh" }]).map(t => <option key={t.id} value={t.name}>{t.name}{t.department ? ` (${t.department})` : ""}{t.activeTasks != null ? ` — ${t.activeTasks} active` : ""}</option>)}</select></label><label>STATUS<select value={status} onChange={e => setStatus(e.target.value)}><option>Reported</option><option>AI classified</option><option>Assigned</option><option>Technician accepted</option><option>Repair in progress</option><option>Resolved</option></select></label></div><label className="internal-notes">INTERNAL NOTES<textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Add context for the assigned team..." /></label><div className="manage-actions"><span><Icon as={ShieldCheck} size={15} /> Notes are visible only to staff</span><Button onClick={handleAssignAndSave} icon={Check}>{assigned ? "Save changes" : "Assign & save"}</Button></div><div className="manage-breakdown"><PriorityBreakdown compact score={selectedIssue?.priorityScore} breakdown={selectedIssue?.priorityBreakdown} /></div><button className="inline-link" onClick={() => navigate("detail")}>View student-facing issue <Icon as={ArrowRight} size={15} /></button></Card></div></div>;
       })()}
       {page === "design" && <div className="wide-container"><div className="page-heading"><div><span className="eyebrow">FOUNDATIONS / COMPONENTS</span><h1>Campus OS design system</h1><p>A calm, precise visual language for every campus interaction.</p></div><Button variant="secondary" onClick={() => navigate("overview")}>View product <Icon as={ArrowRight} size={16} /></Button></div><Card className="ds-card"><SectionTitle title="Color tokens" /><div className="swatch-grid">{[["Background","var(--background)"],["Surface","var(--surface)"],["Raised","var(--raised)"],["Primary","#3B6CFF"],["AI / Violet","#7C5CFF"],["Success","#22C55E"],["Warning","#F59E0B"],["Critical","#EF4444"]].map(([n,c]) => <div className="swatch" key={n}><span style={{ background: c }} /><strong>{n}</strong><small className="mono">{c}</small></div>)}</div></Card><Card className="ds-card"><SectionTitle title="Typography" /><div className="type-samples"><div><span>DISPLAY / 32</span><h1>Built for a better campus.</h1></div><div><span>HEADING / 24</span><h2>Every issue deserves clarity.</h2></div><div><span>BODY / 14</span><p>Thoughtful interfaces help everyone move with confidence.</p></div><div><span>MONO / 12</span><code>CO-2041 · 87 / 100 · 09:41 AM</code></div></div></Card><Card className="ds-card"><SectionTitle title="Components & states" /><div className="ds-component-row"><span>BUTTONS</span><Button>Default</Button><Button variant="secondary">Secondary</Button><Button disabled>Disabled</Button><Button icon={LoaderCircle}>Loading</Button></div><div className="ds-component-row"><span>STATUS</span><Badge tone="success" icon={CircleCheck}>Resolved</Badge><Badge tone="warning" icon={Clock3}>In progress</Badge><Badge tone="critical" icon={CircleAlert}>Critical</Badge><Badge tone="violet" icon={Sparkles}>AI analyzed</Badge></div><div className="ds-component-row"><span>INPUTS</span><input className="field" placeholder="Default input" /><input className="field" value="Active input" readOnly /><input className="field input-error" placeholder="Error state" /></div></Card></div>}
-      {page === "campus-ai" && <CampusAIPage navigate={navigate} toast={setToast} />}
+      {page === "campus-ai" && <CampusAIPage navigate={navigate} toast={setToast} onPrefillComplaint={(text) => { setComplaint(text); navigate("report"); }} />}
       {page === "scholarships" && <ScholarshipsPage navigate={navigate} toast={setToast} />}
       {page === "notices" && <NoticesPage toast={setToast} />}
       {page === "events" && <EventsPage toast={setToast} />}

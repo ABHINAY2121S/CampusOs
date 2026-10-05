@@ -40,7 +40,7 @@ const limiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many requests, please try again later." },
 });
-app.use("/api/", limiter);
+app.use(limiter);
 
 // 5. Health check
 app.get("/health", (req, res) => {

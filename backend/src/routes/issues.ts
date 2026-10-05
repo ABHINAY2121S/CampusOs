@@ -590,13 +590,29 @@ router.patch("/:id/status", authMiddleware, requireRole("admin", "hod", "technic
       return next(new AppError(`Invalid status: ${status}`, 400));
     }
 
+    const existingIssue = await prisma.issue.findFirst({
+      where: { OR: [{ id }, { displayId: id }] },
+    });
+    if (!existingIssue) {
+      return next(new AppError("Issue not found", 404, "NOT_FOUND"));
+    }
+
+    // RBAC: technician can only update issues assigned to them or their department
+    if (req.user!.role === "technician") {
+      const isAssignedToUser = existingIssue.assigneeId === req.user!.id;
+      const isAssignedToDept = Boolean(existingIssue.departmentId && req.user!.departmentId && existingIssue.departmentId === req.user!.departmentId);
+      if (!isAssignedToUser && !isAssignedToDept) {
+        return next(new AppError("You can only update issues assigned to you or your department", 403, "FORBIDDEN"));
+      }
+    }
+
     const updateData: any = { status };
     if (status === "resolved") {
       updateData.resolvedAt = new Date();
     }
 
     const issue = await prisma.issue.update({
-      where: { id },
+      where: { id: existingIssue.id },
       data: updateData,
     });
 
@@ -645,15 +661,27 @@ router.post("/:id/comments", authMiddleware, async (req: Request, res: Response,
     const { id } = req.params;
     const { body } = req.body;
 
-    if (!body || !body.trim()) {
+    if (!body || typeof body !== "string" || !body.trim()) {
       return next(new AppError("Comment body is required", 400));
+    }
+    const cleanBody = body.trim();
+    if (cleanBody.length > 2000) {
+      return next(new AppError("Comment exceeds maximum length of 2000 characters", 400));
+    }
+
+    const issue = await prisma.issue.findFirst({
+      where: { OR: [{ id }, { displayId: id }] },
+      select: { id: true, displayId: true, reporterId: true },
+    });
+    if (!issue) {
+      return next(new AppError("Issue not found", 404, "NOT_FOUND"));
     }
 
     const comment = await prisma.comment.create({
       data: {
-        issueId: id,
+        issueId: issue.id,
         authorId: req.user!.id,
-        body: body.trim(),
+        body: cleanBody,
       },
       include: {
         author: { select: { id: true, name: true, role: true } },
@@ -662,27 +690,39 @@ router.post("/:id/comments", authMiddleware, async (req: Request, res: Response,
 
     await prisma.issueEvent.create({
       data: {
-        issueId: id,
+        issueId: issue.id,
         actor: req.user!.name,
         type: "comment_added",
         payload: { commentId: comment.id },
       },
     });
 
-    broadcast("issue:comment", { issueId: id, comment });
+    broadcast("issue:comment", { issueId: issue.id, comment });
     res.status(201).json(comment);
   } catch (err) {
     next(err);
   }
 });
 
-// ── Confirm resolution (by student) ───────────────────────────────────────
+// ── Confirm resolution (by student or admin) ───────────────────────────────
 router.post("/:id/confirm-resolution", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
 
-    const issue = await prisma.issue.update({
-      where: { id },
+    const issue = await prisma.issue.findFirst({
+      where: { OR: [{ id }, { displayId: id }] },
+    });
+    if (!issue) {
+      return next(new AppError("Issue not found", 404, "NOT_FOUND"));
+    }
+
+    // Permission check: only reporter or admin/HOD can confirm resolution
+    if (issue.reporterId !== req.user!.id && req.user!.role !== "admin" && req.user!.role !== "hod") {
+      return next(new AppError("Only the reporter or an administrator can confirm resolution", 403, "FORBIDDEN"));
+    }
+
+    const updated = await prisma.issue.update({
+      where: { id: issue.id },
       data: { status: "closed" },
     });
 

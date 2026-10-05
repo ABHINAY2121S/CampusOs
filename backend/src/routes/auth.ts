@@ -1,18 +1,27 @@
 import { Router, Request, Response, NextFunction } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import rateLimit from "express-rate-limit";
 import { prisma } from "../lib/prisma";
 import { authMiddleware, generateToken } from "../middleware/auth";
 import { AppError } from "../errors";
 
 const router = Router();
 
-const LoginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(4),
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many login attempts. Please try again after 15 minutes." },
 });
 
-router.post("/login", async (req: Request, res: Response, next: NextFunction) => {
+const LoginSchema = z.object({
+  email: z.string().trim().email(),
+  password: z.string().min(4).max(100),
+});
+
+router.post("/login", authLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = LoginSchema.parse(req.body);
 
