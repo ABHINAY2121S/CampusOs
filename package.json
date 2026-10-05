@@ -1,0 +1,14 @@
+{
+  "name": "campus-os",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Unified Operating System for College Campuses",
+  "scripts": {
+    "dev": "npm --prefix \"Campus OS SaaS Web App\" run dev",
+    "dev:frontend": "npm --prefix \"Campus OS SaaS Web App\" run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "build": "npm --prefix backend run build && npm --prefix \"Campus OS SaaS Web App\" run build",
+    "build:frontend": "npm --prefix \"Campus OS SaaS Web App\" run build",
+    "build:backend": "npm --prefix backend run build"
+  }
+}
