@@ -1,0 +1,10 @@
+{
+  "description": "Streamline campus operations with AI-powered issue reporting for students and administrators, enhancing communication and prioritizing resolutions efficiently.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

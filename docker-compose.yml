@@ -1,0 +1,79 @@
+version: "3.9"
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-campusos}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-campusos}
+      POSTGRES_DB: ${DB_NAME:-campusos}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-campusos} -d ${DB_NAME:-campusos}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-campusos}:${DB_PASSWORD:-campusos}@db:5432/${DB_NAME:-campusos}
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./backend/src
+          target: /app/src
+        - action: rebuild
+          path: ./backend/package.json
+
+  # Optional – never required. docker compose up works without it.
+  # Campus AI and NLP features degrade to rule-based fallbacks when down.
+  nlp-service:
+    build:
+      context: ./nlp-service
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8001/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s  # model download on first run
+
+  frontend:
+    build:
+      context: "./Campus OS SaaS Web App"
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      VITE_API_URL: http://localhost:4000
+      VITE_WS_URL: http://localhost:4000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    develop:
+      watch:
+        - action: sync
+          path: "./Campus OS SaaS Web App/src"
+          target: /app/src
+
+volumes:
+  pgdata:
+  hf_cache:

@@ -1,0 +1,8 @@
+[
+  {"text": "Elevator stuck between floor 1 and 2 with two students inside", "category": "Infrastructure", "building": "Sarabhai Administrative Building", "room": "101", "asset": "Elevator", "urgency": "emergency"},
+  {"text": "Wi-Fi authentication captive portal shows gateway timeout 504", "category": "Network/IT", "building": "Academic Complex", "room": "101", "asset": "WiFi Router", "urgency": "high"},
+  {"text": "Plastic chairs cracked and unstable in room VEH-101", "category": "Furniture", "building": "Visvesvaraya Engineering Hall", "room": "101", "asset": "Chair", "urgency": "low"},
+  {"text": "Heavy corridor rainwater leakage from roof ceiling tiles", "category": "Infrastructure", "building": "Aryabhata Academic Block", "room": "305", "asset": "Roof", "urgency": "high"},
+  {"text": "Soap dispenser broken and empty in girls washroom 1st floor", "category": "Sanitation", "building": "Ramanujan Computing Complex", "room": "102", "asset": "Soap Dispenser", "urgency": "low"},
+  {"text": "AC unit leaking water directly over student desks in computer lab 2", "category": "Electrical", "building": "Ramanujan Computing Complex", "room": "Lab-2", "asset": "AC", "urgency": "high"}
+]
