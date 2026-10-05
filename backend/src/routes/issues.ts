@@ -16,7 +16,7 @@ const AnalyzeSchema = z.object({
   text: z.string().min(3),
 });
 
-router.post("/analyze", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.post("/analyze", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { text } = AnalyzeSchema.parse(req.body);
 

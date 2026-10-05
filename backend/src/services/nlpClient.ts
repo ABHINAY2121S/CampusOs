@@ -35,49 +35,62 @@ function ruleBasedAnalyze(text: string): NLPAnalysisResult {
   }
 
   // 2. Detect Room & Building
-  // Room code pattern e.g. B204, LH-1, Lab 3, CR-302, 401, 102
   let room: string | undefined;
   let building: string | undefined;
 
-  const roomMatch = text.match(/\b([A-Z]-?\d{3}|[A-Z]\d{3}|lh[- ]?\d+|lab[- ]?\d+|cr[- ]?\d+|\d{3})\b/i);
-  if (roomMatch) {
-    room = roomMatch[0].toUpperCase();
+  const numRoomMatch = text.match(/\b(?:room|rm|cr|lh|lab)?\s*([1-9]\d{2,3})\b/i);
+  const alphaRoomMatch = text.match(/\b([A-Z][- ]?\d{2,3}|lh[- ]?\d+|lab[- ]?\d+|cr[- ]?\d+)\b/i);
+  const buildingMatch = text.match(
+    /\b(block\s*[a-d]|[a-d]\s*block|main building|engineering building|admin block|library|hostel\s*[a-d1-4]?|canteen|workshop|seminar hall|auditorium)\b/i
+  );
+
+  if (alphaRoomMatch) {
+    room = alphaRoomMatch[0].toUpperCase().replace(/\s+/g, "");
     if (room.startsWith("A")) building = "Block A (Main)";
     else if (room.startsWith("B")) building = "Block B (Engineering)";
     else if (room.startsWith("C")) building = "Block C (Computing)";
     else if (room.startsWith("D")) building = "Block D (Science)";
-    else building = "Academic Complex";
+  } else if (numRoomMatch) {
+    const num = numRoomMatch[1];
+    room = `Room ${num}`;
+    const floorDigit = parseInt(num[0], 10);
+    building = `DMCE Main Building · Floor ${floorDigit}`;
   }
 
-  const buildingMatch = text.match(
-    /\b(block\s*[a-d]|main building|admin block|library|hostel\s*[a-d1-4]|science block|canteen)\b/i
-  );
   if (buildingMatch) {
-    building = buildingMatch[0];
+    const rawBldg = buildingMatch[0];
+    building = rawBldg.charAt(0).toUpperCase() + rawBldg.slice(1);
   }
 
   // 3. Detect Asset
   let asset: string | undefined;
   const assetCandidates = [
-    "projector",
-    "ac",
-    "air conditioner",
+    "ceiling fan",
+    "exhaust fan",
+    "table fan",
     "fan",
-    "light",
+    "air conditioner",
+    "ac",
+    "projector",
+    "smartboard",
+    "smart board",
     "tube light",
+    "light",
+    "bulb",
     "switchboard",
     "power socket",
-    "tap",
-    "flush",
     "water cooler",
     "ro filter",
+    "tap",
+    "flush",
     "speaker",
     "microphone",
+    "mic",
     "display monitor",
-    "chair",
-    "desk",
     "podium",
     "bench",
+    "chair",
+    "desk",
     "wifi router",
     "lan port",
     "elevator",
@@ -86,7 +99,7 @@ function ruleBasedAnalyze(text: string): NLPAnalysisResult {
     "window latch",
   ];
   for (const cand of assetCandidates) {
-    if (lower.includes(cand)) {
+    if (new RegExp(`\\b${cand}\\b`, "i").test(lower)) {
       asset = cand.charAt(0).toUpperCase() + cand.slice(1);
       break;
     }
@@ -94,15 +107,22 @@ function ruleBasedAnalyze(text: string): NLPAnalysisResult {
 
   // 4. Urgency
   let urgency: "low" | "medium" | "high" | "critical" | "emergency" = "medium";
-  if (/spark|smoke|fire|flood|shock|collapse|blast|burst/i.test(text)) {
+  if (/spark|smoke|fire|flood|shock|collapse|blast|burst|hazard/i.test(text)) {
     urgency = "emergency";
-  } else if (/exam|started|starting|urgent|immediate|right now|hazard/i.test(text)) {
+  } else if (/exam|started|starting|urgent|immediate|right now/i.test(text)) {
     urgency = "critical";
-  } else if (/lecture|class|cannot hear|disturbing|broken|not working/i.test(text)) {
+  } else if (/lecture|class|cannot hear|disturbing|broken|not working|leaking|stuck/i.test(text)) {
     urgency = "high";
   } else if (/flicker|creak|slow|loose|dim/i.test(text)) {
     urgency = "low";
   }
+
+  // Dynamic confidence score based on entity recognition
+  let confidenceScore = 0.65;
+  if (category !== "General") confidenceScore += 0.12;
+  if (asset) confidenceScore += 0.10;
+  if (room || building) confidenceScore += 0.10;
+  const confidence = Math.min(0.97, Math.round(confidenceScore * 100) / 100);
 
   // Pseudo-embedding 384-d normalized vector (deterministic hash based)
   const embedding = new Array(384).fill(0);
@@ -115,11 +135,11 @@ function ruleBasedAnalyze(text: string): NLPAnalysisResult {
 
   return {
     category,
-    building,
-    room,
-    asset,
+    building: building || "DMCE Main Campus",
+    room: room || "",
+    asset: asset || "Campus Equipment",
     urgency,
-    confidence: 0.88,
+    confidence,
     embedding: normalizedEmbedding,
   };
 }

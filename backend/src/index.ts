@@ -3,6 +3,23 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+
+// Load environment variables natively if available in Node 20+
+try {
+  if (typeof (process as any).loadEnvFile === "function") {
+    (process as any).loadEnvFile();
+  }
+} catch {
+  // If .env is missing or already loaded, continue
+}
+
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = "postgresql://campusos:campusos@localhost:5432/campusos";
+}
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = "super_secret_campus_os_jwt_token_key_dev_mode_2026";
+}
+
 import { initSocket } from "./lib/socket";
 import { errorHandler } from "./errors";
 

@@ -302,24 +302,73 @@ export default function App() {
       const res = await analyzeIssue(complaint);
       setAnalysisResult(res);
       setChipEdits({
-        Category: res.category || "Electrical",
-        Location: [res.building, res.room].filter(Boolean).join(" · ") || "B Block · B204",
-        Asset: res.asset || "Projector",
-        Urgency: res.urgency ? res.urgency.charAt(0).toUpperCase() + res.urgency.slice(1) : "High",
+        Category: res.category || "General",
+        Location: [res.building, res.room].filter(Boolean).join(" · ") || "DMCE Campus",
+        Asset: res.asset || "Campus Equipment",
+        Urgency: res.urgency ? res.urgency.charAt(0).toUpperCase() + res.urgency.slice(1) : "Medium",
         "Affected users": "1 (You)",
       });
       setStep(4);
       setProcessing(false);
       setExtracted(true);
     } catch {
-      // Fallback extraction
-      const detectedRoom = complaint.match(/\b([A-Z]\d{2,3})\b/i)?.[1]?.toUpperCase() || "B204";
-      const detectedBuilding = complaint.match(/\b([A-E]\s*Block)\b/i)?.[1] || "B Block";
+      // Client-side rule-based fallback when backend is offline
+      const lower = complaint.toLowerCase();
+
+      // 1. Category
+      let category = "General";
+      if (/ac|air.?condi|fan|light|switch|socket|power|fuse|electric|blackout|tripped|bulb/i.test(complaint)) category = "Electrical";
+      else if (/tap|leak|water|flush|pipe|drain|washroom|toilet|sink/i.test(complaint)) category = "Plumbing";
+      else if (/projector|screen|hdmi|mic|speaker|audio|display|smartboard/i.test(complaint)) category = "Audio-Visual";
+      else if (/bench|desk|chair|table|door|lock|window|blackboard|whiteboard/i.test(complaint)) category = "Furniture";
+      else if (/wifi|internet|lan|ethernet|network|router|slow.?net/i.test(complaint)) category = "Network/IT";
+      else if (/trash|garbage|sweep|mop|dirty|smell|clean/i.test(complaint)) category = "Sanitation";
+      else if (/lift|elevator|staircase|railing|crack|plaster/i.test(complaint)) category = "Infrastructure";
+
+      // 2. Asset
+      const assetMap: [RegExp, string][] = [
+        [/ceiling fan/i, "Ceiling Fan"], [/exhaust fan/i, "Exhaust Fan"], [/table fan/i, "Table Fan"], [/\bfan\b/i, "Fan"],
+        [/air.?condi|ac unit/i, "Air Conditioner"], [/projector/i, "Projector"], [/smart.?board/i, "Smartboard"],
+        [/tube.?light/i, "Tube Light"], [/\blight\b|\bbulb\b/i, "Light"], [/switchboard/i, "Switchboard"],
+        [/water.?cooler/i, "Water Cooler"], [/ro.?filter/i, "RO Filter"], [/\btap\b|\bflush\b/i, "Tap"],
+        [/\bmic\b|microphone/i, "Microphone"], [/speaker/i, "Speaker"], [/wifi.?router/i, "Wi-Fi Router"],
+        [/\blan\b|ethernet/i, "LAN Port"], [/elevator|\blift\b/i, "Elevator"],
+        [/podium/i, "Podium"], [/\bbench\b/i, "Bench"], [/\bchair\b/i, "Chair"], [/\bdesk\b/i, "Desk"],
+      ];
+      let asset = "";
+      for (const [re, name] of assetMap) {
+        if (re.test(lower)) { asset = name; break; }
+      }
+
+      // 3. Room & Building
+      const alphaRoom = complaint.match(/\b([A-Z][- ]?\d{2,3}|lh[- ]?\d+|lab[- ]?\d+|cr[- ]?\d+)\b/i);
+      const numRoom = complaint.match(/\b(?:room|rm|cr|lh|lab)?\s*([1-9]\d{2,3})\b/i);
+      const bldgWord = complaint.match(/\b([A-E]\s*Block|block\s*[a-e]|main building|hostel|library|canteen|workshop|seminar hall)\b/i);
+      let room = ""; let building = "";
+      if (alphaRoom) {
+        room = alphaRoom[0].toUpperCase().replace(/\s+/g, "");
+        if (room[0] === "A") building = "Block A";
+        else if (room[0] === "B") building = "Block B";
+        else if (room[0] === "C") building = "Block C";
+        else if (room[0] === "D") building = "Block D";
+      } else if (numRoom) {
+        room = `Room ${numRoom[1]}`;
+        building = `DMCE Main Building · Floor ${numRoom[1][0]}`;
+      }
+      if (bldgWord) building = bldgWord[0];
+
+      // 4. Urgency
+      let urgency = "Medium";
+      if (/spark|smoke|fire|flood|shock|hazard/i.test(complaint)) urgency = "Emergency";
+      else if (/exam|urgent|right now|immediate|starting/i.test(complaint)) urgency = "Critical";
+      else if (/lecture|class|broken|not.?working|leaking|stuck/i.test(complaint)) urgency = "High";
+      else if (/flicker|slow|loose|dim/i.test(complaint)) urgency = "Low";
+
       setChipEdits({
-        Category: "Electrical",
-        Location: `${detectedBuilding} · ${detectedRoom}`,
-        Asset: "Classroom equipment",
-        Urgency: "High",
+        Category: category,
+        Location: [building, room].filter(Boolean).join(" · ") || "DMCE Campus",
+        Asset: asset || "Campus Equipment",
+        Urgency: urgency,
         "Affected users": "1 (You)",
       });
       setStep(4);
@@ -339,11 +388,11 @@ export default function App() {
       const newIssue = await createIssue({
         title: complaint.slice(0, 80) || "Reported Issue",
         description: complaint,
-        category: chipEdits["Category"] || analysisResult?.category || "Electrical",
-        building: analysisResult?.building || "B Block",
-        room: analysisResult?.room || "B204",
-        asset: chipEdits["Asset"] || analysisResult?.asset || "Equipment",
-        urgency: (chipEdits["Urgency"] || analysisResult?.urgency || "high").toLowerCase(),
+        category: chipEdits["Category"] || analysisResult?.category || "General",
+        building: analysisResult?.building || chipEdits["Location"]?.split(" · ")[0] || "DMCE Campus",
+        room: analysisResult?.room || chipEdits["Location"]?.split(" · ")[1] || "",
+        asset: chipEdits["Asset"] || analysisResult?.asset || "Campus Equipment",
+        urgency: (chipEdits["Urgency"] || analysisResult?.urgency || "medium").toLowerCase(),
         embedding: analysisResult?.embedding || null,
       });
       setSelectedIssue(newIssue);
@@ -377,11 +426,11 @@ export default function App() {
       const newIssue = await createIssue({
         title: complaint.slice(0, 80) || "Separate Reported Issue",
         description: complaint,
-        category: chipEdits["Category"] || analysisResult?.category || "Electrical",
-        building: analysisResult?.building || "B Block",
-        room: analysisResult?.room || "B204",
-        asset: chipEdits["Asset"] || analysisResult?.asset || "Equipment",
-        urgency: (chipEdits["Urgency"] || analysisResult?.urgency || "high").toLowerCase(),
+        category: chipEdits["Category"] || analysisResult?.category || "General",
+        building: analysisResult?.building || chipEdits["Location"]?.split(" · ")[0] || "DMCE Campus",
+        room: analysisResult?.room || chipEdits["Location"]?.split(" · ")[1] || "",
+        asset: chipEdits["Asset"] || analysisResult?.asset || "Campus Equipment",
+        urgency: (chipEdits["Urgency"] || analysisResult?.urgency || "medium").toLowerCase(),
         embedding: analysisResult?.embedding || null,
       });
       setSelectedIssue(newIssue);
